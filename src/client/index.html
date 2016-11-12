@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSaaS</title>
+    <script src="bundle.js"></script>
+</head>
+<body onload="init()">
+    <h1>SSaaS (Secret Santa as a Service)</h1>
+    <div id="ss-app">
+        <h2>Recipients</h2>
+        <ol data-ss="recipients"></ol>
+        <button data-ss="add-recipient">Add recipient</button>
+        <h2>Forbidden Pairs</h2>
+        <ul data-ss="forbidden-pairs"></ul>
+        <button data-ss="add-fpair">Add pair</button>
+        <br/>
+        <button data-ss="load-sample">Load Sample</button>
+        <br/>
+        <button data-ss="dry-run">Dry Run</button>
+    </div>
+</body>
+</html>
