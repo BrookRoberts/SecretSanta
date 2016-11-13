@@ -1,7 +1,7 @@
 # 
 
-/dst
-/src/client/node_modules
+/server/client/dst
+/server/client/node_modules
 
 # Windows image file caches
 Thumbs.db

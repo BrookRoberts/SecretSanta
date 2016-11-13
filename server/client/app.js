@@ -1,13 +1,15 @@
-var d3 = require('d3')
+//var d3 = require('d3')
 
-var SSRecipientItem = (id, parent_dom, removeRecipient, name, email_address) => {
+var SSRecipientItem = (id, parent_dom, removeRecipient, name, email_address, allow_delete) => {
     var dom_node
     var htmlNode = (name, email_address) => {
         var html_fragment = document.createElement('li')
         html_fragment.innerHTML = `
             <span>Name: <input type="text" value="${name}"/></span>
-            <span>Email Address: <input type="text" value="${email_address}"</span>
-            <span data-ss='recipient-delete'>✗</span>`
+            <span>Email Address: <input type="text" value="${email_address}"</span>`
+        if (allow_delete) {
+            html_fragment.innerHTML += `<span data-ss='recipient-delete'>✗</span>`
+        }
         dom_node = html_fragment;
         return html_fragment
     }
@@ -15,9 +17,12 @@ var SSRecipientItem = (id, parent_dom, removeRecipient, name, email_address) => 
         //interesting; if you do innerHTML += ..., it removes the eventListeners the other elements in that container
         //http://stackoverflow.com/a/7327109/1010076
         parent_dom.appendChild(htmlNode(name, email_address));
-        var recipient_delete = dom_node.querySelector("[data-ss='recipient-delete']");
-        recipient_delete.onclick = () => {
-            removeRecipient(id)
+        //binding stuff here:
+        if (allow_delete) {
+            var recipient_delete = dom_node.querySelector("[data-ss='recipient-delete']");
+            recipient_delete.onclick = () => {
+                removeRecipient(id)
+            }
         }
     }
 
@@ -45,6 +50,7 @@ var FPairItem = (id, parent_dom, removeFpair, name1, name2) => {
     }
     var render = () => {
         parent_dom.appendChild(htmlNode(name1, name2));
+        //binding stuff here:
         var fpair_delete = dom_node.querySelector("[data-ss='fpair-delete']");
         fpair_delete.onclick = () => {
             removeFpair(id)
@@ -140,8 +146,8 @@ var SSController = (model) => {
         loadSampleRecipients()
     };
     var loadSampleRecipients = () => {
-        model.clearRecipients()
-        model.clearFpairs()
+        model.removeAllRecipients()
+        model.removeAllFpairs()
         for (let recipient of sampleRecipients) {
             model.addRecipient(recipient)
         }
@@ -156,10 +162,17 @@ var SSController = (model) => {
         model.addForbiddenPair(['',''])
     }
 
+    var initialiseApp = () => {
+        model.addRecipient(['',''])
+        model.addRecipient(['',''])
+        model.addRecipient(['',''])
+    }
+
     return {
         sampleBtnClicked,
         addRecipientBtnClicked,
-        addFpairBtnClicked
+        addFpairBtnClicked,
+        initialiseApp
     }
 }
 
@@ -184,7 +197,8 @@ var SSModel = (view) => {
         }
     }
     var addRecipient = (recipient) => {
-        recipients.push(new SSRecipientItem(generateRecipientId(), view.recipients_dom, removeRecipient, ...recipient))
+        var allow_delete = recipients.length >= 3
+        recipients.push(new SSRecipientItem(generateRecipientId(), view.recipients_dom, removeRecipient, ...recipient, allow_delete))
         view.renderRecipients(recipients)
     }
 
@@ -202,11 +216,11 @@ var SSModel = (view) => {
         view.renderFpairs(forbidden_pairs)
     }
 
-    var clearRecipients = () => {
+    var removeAllRecipients = () => {
         recipients = []
         view.renderRecipients(recipients)
     }
-    var clearFpairs = () => {
+    var removeAllFpairs = () => {
         forbidden_pairs = []
         view.renderFpairs(forbidden_pairs)
     }
@@ -216,8 +230,8 @@ var SSModel = (view) => {
         removeRecipient,
         addForbiddenPair,
         removeForbiddenPair,
-        clearRecipients,
-        clearFpairs
+        removeAllRecipients,
+        removeAllFpairs
     }
 }
 
@@ -255,6 +269,7 @@ var applySSBindings = (model, view, controller, dom) => {
             console.error("couldn't bind to: ", bind_type);
         }
     }
+    controller.initialiseApp()
 }
 
 window.init = () => {
