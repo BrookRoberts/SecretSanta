@@ -1,12 +1,13 @@
 var d3 = require('d3')
 
-var SSRecipientItem = (id, parent_dom, name, email_address) => {
+var SSRecipientItem = (id, parent_dom, removeRecipient, name, email_address) => {
     var dom_node
     var htmlNode = (name, email_address) => {
         var html_fragment = document.createElement('li')
         html_fragment.innerHTML = `
             <span>Name: <input type="text" value="${name}"/></span>
-            <span>Email Address: <input type="text" value="${email_address}"</span>`
+            <span>Email Address: <input type="text" value="${email_address}"</span>
+            <span data-ss='recipient-delete'>✗</span>`
         dom_node = html_fragment;
         return html_fragment
     }
@@ -14,7 +15,12 @@ var SSRecipientItem = (id, parent_dom, name, email_address) => {
         //interesting; if you do innerHTML += ..., it removes the eventListeners the other elements in that container
         //http://stackoverflow.com/a/7327109/1010076
         parent_dom.appendChild(htmlNode(name, email_address));
+        var recipient_delete = dom_node.querySelector("[data-ss='recipient-delete']");
+        recipient_delete.onclick = () => {
+            removeRecipient(id)
+        }
     }
+
     var remove = () => {
         parent_dom.removeChild(dom_node);
     }
@@ -25,19 +31,24 @@ var SSRecipientItem = (id, parent_dom, name, email_address) => {
     }
 }
 
-var FPairItem = (id, parent_dom, name1, name2) => {
+var FPairItem = (id, parent_dom, removeFpair, name1, name2) => {
     var dom_node
     var htmlNode = (name1, name2) => {
         var html_fragment = document.createElement('li')
         html_fragment.innerHTML = `
             <span>Name1: <input type="text" value="${name1}"/></span>
-            <span>Name2: <input type="text" value="${name2}"</span>`
+            <span>Name2: <input type="text" value="${name2}"</span>
+            <span data-ss='fpair-delete'>✗</span>`
         dom_node = html_fragment
         return html_fragment
 
     }
     var render = () => {
         parent_dom.appendChild(htmlNode(name1, name2));
+        var fpair_delete = dom_node.querySelector("[data-ss='fpair-delete']");
+        fpair_delete.onclick = () => {
+            removeFpair(id)
+        }
     }
     var remove = () => {
         parent_dom.removeChild(dom_node);
@@ -54,6 +65,7 @@ var SSView = () => {
     var rendered_recipients = {}
     var recipients_dom;
     var renderRecipients = (recipients) => {
+        //window.updated_recipients = recipients.reduce((o, v, i) => {
         var updated_recipients = recipients.reduce((o, v, i) => {
             o[v.id] = v
             return o
@@ -125,10 +137,11 @@ var SSController = (model) => {
     ];
 
     var sampleBtnClicked = () => {
-        console.log("sample btn clicked");
+        loadSampleRecipients()
     };
     var loadSampleRecipients = () => {
         model.clearRecipients()
+        model.clearFpairs()
         for (let recipient of sampleRecipients) {
             model.addRecipient(recipient)
         }
@@ -136,10 +149,17 @@ var SSController = (model) => {
             model.addForbiddenPair(pair)
         }
     };
+    var addRecipientBtnClicked = () => {
+        model.addRecipient(['',''])
+    }
+    var addFpairBtnClicked = () => {
+        model.addForbiddenPair(['',''])
+    }
 
     return {
         sampleBtnClicked,
-        loadSampleRecipients
+        addRecipientBtnClicked,
+        addFpairBtnClicked
     }
 }
 
@@ -154,25 +174,50 @@ var SSModel = (view) => {
     }
     var recipients = [];
     var forbidden_pairs = [];
+    //TODO: make this constant time
+    var removeRecipient = (recipient_id) => {
+        for (let i = 0; i < recipients.length; i++) {
+              if (recipient_id == recipients[i].id) {
+                  recipients.splice(i, 1)
+                  view.renderRecipients(recipients)
+              }
+        }
+    }
     var addRecipient = (recipient) => {
-        recipients.push(new SSRecipientItem(generateRecipientId(), view.recipients_dom, ...recipient))
+        recipients.push(new SSRecipientItem(generateRecipientId(), view.recipients_dom, removeRecipient, ...recipient))
         view.renderRecipients(recipients)
     }
 
+    //TODO: make this constant time
+    var removeForbiddenPair = (fpair_id) => {
+        for (let i = 0; i < forbidden_pairs.length; i++) {
+              if (fpair_id == forbidden_pairs[i].id) {
+                  forbidden_pairs.splice(i, 1)
+                  view.renderFpairs(forbidden_pairs)
+              }
+        }
+    }
     var addForbiddenPair = (fpair) => {
-        forbidden_pairs.push(new FPairItem(generateForbiddenPairId(), view.fpairs_dom, ...fpair))
+        forbidden_pairs.push(new FPairItem(generateForbiddenPairId(), view.fpairs_dom, removeForbiddenPair, ...fpair))
         view.renderFpairs(forbidden_pairs)
     }
 
     var clearRecipients = () => {
-        recipients = [];
-        //view.renderRecipients(recipients);
+        recipients = []
+        view.renderRecipients(recipients)
+    }
+    var clearFpairs = () => {
+        forbidden_pairs = []
+        view.renderFpairs(forbidden_pairs)
     }
 
     return {
         addRecipient,
+        removeRecipient,
         addForbiddenPair,
-        clearRecipients
+        removeForbiddenPair,
+        clearRecipients,
+        clearFpairs
     }
 }
 
@@ -210,8 +255,6 @@ var applySSBindings = (model, view, controller, dom) => {
             console.error("couldn't bind to: ", bind_type);
         }
     }
-
-    controller.loadSampleRecipients()
 }
 
 window.init = () => {
