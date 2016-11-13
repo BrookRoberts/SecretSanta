@@ -1,0 +1,14 @@
+#dry-run {
+    width: 300px;
+    height: 300px;
+    border: 1px solid black;
+    .links line {
+        stroke: #999;
+        stroke-opacity: 0.6;
+    }
+
+    .nodes circle {
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
+}

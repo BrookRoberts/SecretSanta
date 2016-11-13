@@ -1,5 +1,3 @@
-//var d3 = require('d3')
-
 var SSRecipientItem = (id, parent_dom, removeRecipient, name, email_address, allow_delete) => {
     var dom_node
     var htmlNode = (name, email_address) => {
@@ -136,10 +134,12 @@ var SSController = (model) => {
         ["GOB Bluth", "gob@bluthcompany.com"],
         ["Lindsay Bluth Funke", "lindsay@bluthcompany.com"],
         ["Tobias Funke", "tobias@bluthcompany.com"],
-        ["Buster Funke", "buster@bluthcompany.com"]
+        ["Buster Bluth", "buster@bluthcompany.com"],
+        ["Michael Bluth", "michael@bluthcompany.com"]
     ];
     var sampleForbiddenPairs = [
-        ["George Bluth", "Lucille Bluth"]
+        ["George Bluth", "Lucille Bluth"],
+        ["Tobias Funke", "Lindsay Bluth Funke"]
     ];
 
     var sampleBtnClicked = () => {
@@ -231,11 +231,13 @@ var SSModel = (view) => {
         addForbiddenPair,
         removeForbiddenPair,
         removeAllRecipients,
-        removeAllFpairs
+        removeAllFpairs,
+        recipients,
+        forbidden_pairs
     }
 }
 
-var applySSBindings = (model, view, controller, dom) => {
+var applySSBindings = (model, view, controller, dom, visualiser) => {
 
     var getBindType = (attr) => {
         return attr.split(':')[0];
@@ -250,6 +252,11 @@ var applySSBindings = (model, view, controller, dom) => {
         },
         "add-fpair": (elem) => {
             elem.onclick = controller.addFpairBtnClicked
+        },
+        "dry-run": (elem) => {
+            elem.onclick = () => {
+                visualiser.render(model.recipients, model.forbidden_pairs)
+            }
         },
         "recipients": (elem) => {
             view.recipients_dom = elem
@@ -270,12 +277,15 @@ var applySSBindings = (model, view, controller, dom) => {
         }
     }
     controller.initialiseApp()
+    controller.sampleBtnClicked()
+    visualiser.render(model.recipients, model.forbidden_pairs)
 }
 
-window.init = () => {
+var SecretSantaApp = (dom, visualiser) => {
     var view = new SSView()
     var model = new SSModel(view)
     var controller = new SSController(model)
-    var ss_dom = document.getElementById("ss-app")
-    applySSBindings(model, view, controller, ss_dom)
+    applySSBindings(model, view, controller, dom, visualiser)
 }
+
+exports.SecretSantaApp = SecretSantaApp
