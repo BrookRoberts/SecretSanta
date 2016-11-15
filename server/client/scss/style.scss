@@ -7,8 +7,14 @@
         stroke-opacity: 0.6;
     }
 
-    .nodes circle {
+    .node circle {
         stroke: #fff;
         stroke-width: 1.5px;
+    }
+    .node text {
+        font-size: 13px;
+        fill: #000;
+        color: #000;
+        font: 10px sans-serif;
     }
 }

@@ -5,7 +5,7 @@ var sample_cycle = [
     {name: "Buster Bluth", email: "test@test.org", target: "Michael Bluth"},
     {name: "Michael Bluth", email: "test@test.org", target: "Tobias Funke"},
     {name: "Tobias Funke", email: "test@test.org", target: "George Bluth"},
-    {name: "George Bluth", email: "test@test.org", target: "Lindsday Bluth Funke"},
+    {name: "George Bluth", email: "test@test.org", target: "Lindsay Bluth Funke"},
     {name: "Lindsay Bluth Funke", email: "test@test.org", target: "GOB Bluth"},
     {name: "GOB Bluth", email: "test@test.org", target: "Lucille Bluth"}
 ]
@@ -59,6 +59,13 @@ var Visualiser = (dom) => {
             .force("charge", d3.forceManyBody())
             .force("center", d3.forceCenter(width / 2, height / 2));
 
+        simulation
+            .nodes(graph.nodes)
+            .on("tick", ticked)
+
+        simulation.force("link")
+            .links(graph.links);
+
         var link = svg.append("g")
             .attr("class", "links")
             .selectAll("line")
@@ -68,25 +75,23 @@ var Visualiser = (dom) => {
 
         var node = svg.append("g")
             .attr("class", "nodes")
-            .selectAll("circle")
+            .selectAll(".node")
             .data(graph.nodes)
-            .enter().append("circle")
-            .attr("r", 5)
-            .attr("fill", function(d) { return color(d.group); })
+            .enter().append("g")
+            .attr("class", "node")
             .call(d3.drag()
                 .on("start", dragstarted)
                 .on("drag", dragged)
-                .on("end", dragended));
+                .on("end", dragended))
 
-        node.append("title")
-            .text(function(d) { return d.id; });
+        node.append('circle')
+            .attr("r", 5)
+            .attr("fill", function(d) { return color(d.group); })
 
-        simulation
-            .nodes(graph.nodes)
-            .on("tick", ticked);
-
-        simulation.force("link")
-            .links(graph.links);
+        node.append("text")
+            .text(function(d) {return d.id})
+            .attr("dx", 5)
+            .attr("dy", 15)
 
         function ticked() {
             link
@@ -95,9 +100,12 @@ var Visualiser = (dom) => {
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function(d) { return d.target.y; });
 
-            node
-                .attr("cx", function(d) { return d.x; })
-                .attr("cy", function(d) { return d.y; });
+            //don't know why this works?
+            node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+            //node
+                //.attr("cx", function(d) { return d.x; })
+                //.attr("cy", function(d) { return d.y; });
         }
 
         function dragstarted(d) {
