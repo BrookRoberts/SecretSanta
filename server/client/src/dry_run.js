@@ -50,13 +50,11 @@ var Visualiser = (dom) => {
         var svg = d3.select(dom)
         var width = svg.style("width").replace("px", "")
         var height = svg.style("height").replace("px", "")
-        console.log("width: ", width);
-        console.log("height: ", height);
         var color = d3.scaleOrdinal(d3.schemeCategory20)
 
         var simulation = d3.forceSimulation()
-            .force("link", d3.forceLink().id(function(d) { return d.id; }))
-            .force("charge", d3.forceManyBody())
+            .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(60))
+            .force("charge", d3.forceManyBody().strength(-100))
             .force("center", d3.forceCenter(width / 2, height / 2));
 
         simulation
@@ -66,12 +64,27 @@ var Visualiser = (dom) => {
         simulation.force("link")
             .links(graph.links);
 
+        // build the arrow.
+        svg.append("svg:defs").selectAll("marker")
+            .data(["end"])      // Different link/path types can be defined here
+            .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", -1.5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5");
+
         var link = svg.append("g")
             .attr("class", "links")
-            .selectAll("line")
+            .selectAll("path")
             .data(graph.links)
-            .enter().append("line")
-            .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("marker-end", "url(#end)");
 
         var node = svg.append("g")
             .attr("class", "nodes")
@@ -95,17 +108,17 @@ var Visualiser = (dom) => {
 
         function ticked() {
             link
-                .attr("x1", function(d) { return d.source.x; })
-                .attr("y1", function(d) { return d.source.y; })
-                .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
+                .attr("d", linkArc)
 
-            //don't know why this works?
-            node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+            node
+                .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        }
 
-            //node
-                //.attr("cx", function(d) { return d.x; })
-                //.attr("cy", function(d) { return d.y; });
+        function linkArc(d) {
+            var dx = d.target.x - d.source.x,
+                dy = d.target.y - d.source.y,
+                dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
         }
 
         function dragstarted(d) {

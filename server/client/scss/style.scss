@@ -1,10 +1,13 @@
 #dry-run {
-    width: 300px;
-    height: 300px;
+    width: 400px;
+    height: 400px;
     border: 1px solid black;
-    .links line {
+    path.link {
         stroke: #999;
         stroke-opacity: 0.6;
+        stroke-width: 1px;
+        // need this to stop the fill coming up
+        fill: none;
     }
 
     .node circle {
