@@ -11,16 +11,22 @@
 <body onload="init()">
     <h1>SSaaS (Secret Santa as a Service)</h1>
     <div id="ss-app">
-        <h2>Recipients</h2>
-        <ol data-ss="recipients"></ol>
-        <button data-ss="add-recipient">Add recipient</button>
+        <button data-ss="load-sample">Load Sample</button>
+        <br/>
+        <h2>Participants</h2>
+        <span>Participants and their email addresses</span>
+        <ol data-ss="participants"></ol>
+        <button data-ss="add-participant">Add recipient</button>
+        <div data-ss="participants-validate-warning">Participant names need to be unique</div>
+        <div data-ss="emails-validate-warning">Email addresses need to be unique and valid</div>
         <h2>Forbidden Pairs</h2>
+        <span>If someone doesn't want to give a gift to a particular person (e.g. doesn't know them well enough), put the gifter and recipient here</span>
         <ul data-ss="forbidden-pairs"></ul>
         <button data-ss="add-fpair">Add pair</button>
         <br/>
-        <button data-ss="load-sample">Load Sample</button>
-        <br/>
+        <div data-ss="fpairs-validate-warning">Gifter and recipient names need to exist</div>
         <button data-ss="dry-run">Dry Run</button>
+        <button data-ss="submit">Submit</button>
     </div>
     <svg id="dry-run">
     </svg>

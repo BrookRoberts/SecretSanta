@@ -10,6 +10,18 @@ var sample_cycle = [
     {name: "GOB Bluth", email: "test@test.org", target: "Lucille Bluth"}
 ]
 
+//http://stackoverflow.com/questions/8567114/how-to-make-an-ajax-call-without-jquery
+function get(url) {
+    return new Promise((resolve, reject) => {
+        const req = new XMLHttpRequest();
+        req.open('GET', url);
+        req.onload = () => req.status === 200 ? resolve(req.response) : reject(Error(req.statusText));
+        req.onerror = (e) => reject(Error(`Network Error: ${e}`));
+        req.send();
+    });
+}
+exports.get = get
+
 var Visualiser = (dom) => {
     var getGraph = (settings) => {
         var payload = sample_cycle
