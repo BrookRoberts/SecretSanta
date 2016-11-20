@@ -9,19 +9,19 @@ var FPAIR_REMOVED = "FPAIR_REMOVED"
 
 var SSParticipantItem = (id, parent_dom, pubsub, participant, email_address, allow_delete) => {
     var dom_node
-    var htmlNode = (participant, email_address) => {
+    var htmlNode = (name, email_address) => {
         var html_fragment = document.createElement('li')
+        var include_delete = allow_delete? `<span data-ss='participant-delete'>✗</span>` : ""
         html_fragment.innerHTML = `
-            <span>Name: <input type="text" data-ss="participant" value="${participant}"/></span>
-            <span>Email Address: <input data-ss="email-address" type="text" value="${email_address}"</span>`
-        if (allow_delete) {
-            html_fragment.innerHTML += `<span data-ss='participant-delete'>✗</span>`
-        }
-        dom_node = html_fragment;
+            <form>
+                <span>Name: <input type="text" data-ss="participant" value="${name}"/></span>
+                <span>Email Address: <input data-ss="email-address" type="text" value="${email_address}"</span>
+                ${include_delete}
+            </form>`
+        dom_node = html_fragment
         return html_fragment
     }
     var render = () => {
-        //if you do innerHTML += ..., it removes the eventListeners the other elements in that container
         //http://stackoverflow.com/a/7327109/1010076
         parent_dom.appendChild(htmlNode(participant, email_address));
         //binding stuff here:
@@ -35,7 +35,6 @@ var SSParticipantItem = (id, parent_dom, pubsub, participant, email_address, all
             email_address = email_dom.value
             pubsub.pub(PARTICIPANT_EMAIL_CHANGED)
         })
-
         if (allow_delete) {
             var participant_delete = dom_node.querySelector("[data-ss='participant-delete']");
             participant_delete.onclick = () => {
@@ -43,14 +42,12 @@ var SSParticipantItem = (id, parent_dom, pubsub, participant, email_address, all
             }
         }
     }
-    var remove = () => {
-        parent_dom.removeChild(dom_node);
-    }
-    
     return {
         id,
         render,
-        remove,
+        remove: () => {
+            parent_dom.removeChild(dom_node)
+        },
         getName: () => {
             return participant
         },
@@ -112,7 +109,6 @@ var SSView = () => {
     // Let's roll our own 'virtual dom' here
     var rendered_participants = {}
     var renderParticipants = (participants) => {
-        //window.updated_participants = participants.reduce((o, v, i) => {
         var updated_participants = participants.reduce((o, v, i) => {
             o[v.id] = v
             return o
@@ -171,7 +167,7 @@ var SSView = () => {
     }
     var participants_warn;
     var renderValidateParticipantsWarning = (to_display) => {
-        if (!(participants_warn == to_display)) {
+        if (!(participants_warn === to_display)) {
             let display_style = to_display? 'block' : 'none'
             validate_participants_dom.style.display = display_style
             participants_warn = to_display
@@ -179,10 +175,18 @@ var SSView = () => {
     }
     var fpairs_warn;
     var renderValidateFpairsWarning = (to_display) => {
-        if (!(fpairs_warn == to_display)) {
+        if (!(fpairs_warn === to_display)) {
             let display_style = to_display? 'block' : 'none'
             validate_fpairs_dom.style.display = display_style
             fpairs_warn = to_display
+        }
+    }
+    var empties_warn;
+    var renderValidateEmptiesWarning = (to_display) => {
+        if (!(empties_warn === to_display)) {
+            let display_style = to_display? 'block' : 'none'
+            validate_empties_dom.style.display = display_style
+            empties_warn = to_display
         }
     }
 
@@ -191,6 +195,7 @@ var SSView = () => {
     var validate_emails_dom;
     var validate_participants_dom;
     var validate_fpairs_dom;
+    var validate_empties_dom;
     var submit_btn_dom;
 
     return {
@@ -199,6 +204,7 @@ var SSView = () => {
         renderValidateFpairsWarning,
         renderValidateEmailsWarning,
         renderValidateParticipantsWarning,
+        renderValidateEmptiesWarning,
         getParticipantsDom: () => {
             return participants_dom
         },
@@ -214,14 +220,22 @@ var SSView = () => {
         bindValidateEmails: (node) => {
             node.style.display = 'none'
             validate_emails_dom = node
+            fpairs_warn = false
         },
         bindValidateParticipants: (node) => {
             node.style.display = 'none'
             validate_participants_dom = node
+            participants_warn = false
         },
         bindValidateFpairs: (node) => {
             node.style.display = 'none'
             validate_fpairs_dom = node
+            fpairs_warn = false
+        },
+        bindValidateEmpties: (node) => {
+            node.style.display = 'none'
+            validate_empties_dom = node
+            empties_warn = false
         },
         bindSubmitBtn: (node) => {
             node.style.display = 'none'
@@ -239,15 +253,19 @@ var SSController = (model) => {
         ["Tobias Funke", "tobias@bluthcompany.com"],
         ["Buster Bluth", "buster@bluthcompany.com"],
         ["Michael Bluth", "michael@bluthcompany.com"]
-    ];
+    ]
+
     var sampleForbiddenPairs = [
         ["George Bluth", "Lucille Bluth"],
-        ["Tobias Funke", "Lindsay Bluth Funke"]
-    ];
+        ["Lucille Bluth", "George Bluth"],
+        ["Lindsay Bluth Funke", "Tobias Funke"]
+    ]
 
     var sampleBtnClicked = () => {
         loadSampleParticipants()
-    };
+        model.validateSubmission()
+    }
+
     var loadSampleParticipants = () => {
         model.removeAllParticipants()
         model.removeAllFpairs()
@@ -257,7 +275,8 @@ var SSController = (model) => {
         for (let pair of sampleForbiddenPairs) {
             model.addForbiddenPair(pair)
         }
-    };
+    }
+
     var addParticipantBtnClicked = () => {
         model.addParticipant(['',''])
     }
@@ -265,12 +284,6 @@ var SSController = (model) => {
         model.addForbiddenPair(['',''])
     }
     
-    var dryRunClicked = () => {
-        //if (model.validateEmpties() && model.validateEntries()) {
-            //TODO render stuff here
-        //}
-    }
-
     var initialiseApp = () => {
         model.addParticipant(['',''])
         model.addParticipant(['',''])
@@ -281,7 +294,6 @@ var SSController = (model) => {
         sampleBtnClicked,
         addParticipantBtnClicked,
         addFpairBtnClicked,
-        dryRunClicked,
         initialiseApp
     }
 }
@@ -306,6 +318,7 @@ var SSModel = (view) => {
               }
         }
     }
+    //void → bool
     var validateEmailAddresses = () => {
         var num_elems = participants.length
         var email_addresses = participants.map((participant_item) => {
@@ -313,14 +326,18 @@ var SSModel = (view) => {
         })
         var should_display = !h.areUniqueWithoutEmptyStrings(email_addresses) || !h.areEmailsValidWithoutEmptyStrings(email_addresses)
         view.renderValidateEmailsWarning(should_display)
+        return !should_display
     }
+    //void → bool
     var validateParticipantNames = () => {
         var names = participants.map((participant_item) => {
             return participant_item.getName()
         })
         var should_display = !h.areUniqueWithoutEmptyStrings(names)
         view.renderValidateParticipantsWarning(should_display)
+        return !should_display
     }
+    //participant name → void
     var validateFPairName = (name) => {
         var participant_names = new Set(participants.map((participant_item) => {
             return participant_item.getName()
@@ -328,6 +345,7 @@ var SSModel = (view) => {
         var should_display = !participant_names.has(name)
         view.renderValidateFpairsWarning(should_display)
     }
+    //void → bool
     var validateFPairNames = () => {
         var participant_names = new Set(participants.map((participant_item) => {
             return participant_item.getName()
@@ -336,17 +354,50 @@ var SSModel = (view) => {
             let gifter = fpair.getGifter()
             if (!participant_names.has(gifter)) {
                 view.renderValidateFpairsWarning(true)
-                break
+                return false
             }
             let recipient = fpair.getRecipient()
             if (!participant_names.has(recipient)) {
                 view.renderValidateFpairsWarning(true)
-                break
+                return false
             }
         }
         view.renderValidateFpairsWarning(false)
+        return true
     }
-
+    //void → bool
+    var validateSubmission = () => {
+        //check for empties
+        for (let fpair of forbidden_pairs) {
+            let gifter = fpair.getGifter()
+            if (gifter === "") {
+                view.renderValidateEmptiesWarning(true)
+                return false
+            }
+            let recipient = fpair.getRecipient()
+            if (recipient === "") {
+                view.renderValidateEmptiesWarning(true)
+                return false
+            }
+        }
+        for (let participant of participants) {
+            let name = participant.getName()
+            if (name === "") {
+                view.renderValidateEmptiesWarning(true)
+                return false
+            }
+            let email = participant.getEmailAddress()
+            if (email === "") {
+                view.renderValidateEmptiesWarning(true)
+                return false
+            }
+        }
+        view.renderValidateEmptiesWarning(false)
+        //check for bad submissions
+        //console.log("validateParticipantNames(): ", validateParticipantNames());
+        //console.log("validateEmailAddresses(): ", validateEmailAddresses());
+        return validateParticipantNames() && validateEmailAddresses()
+    }
 
     var addParticipant = (participant) => {
         var allow_delete = participants.length >= MIN_PARTICIPANTS
@@ -396,8 +447,17 @@ var SSModel = (view) => {
         addForbiddenPair,
         removeAllParticipants,
         removeAllFpairs,
-        participants,
-        forbidden_pairs
+        validateSubmission,
+        getModel: () => {
+            return {
+                participants: participants.map((x) => {
+                    return [x.getName(), x.getEmailAddress()]
+                }),
+                forbidden_pairs: forbidden_pairs.map((x) => {
+                    return [x.getGifter(), x.getRecipient()]
+                })
+            }
+        }
     }
 }
 
@@ -418,11 +478,12 @@ var applySSBindings = (model, view, controller, dom, visualiser) => {
             elem.onclick = controller.addFpairBtnClicked
         },
         "dry-run": (elem) => {
-            elem.onclick = controller.dryRunClicked
-                //if (validateParticipants(model) && validateForbiddenPairs(model)) {
-                    //visualiser.render(model.participants, model.forbidden_pairs)
-                //} else {
-                //}
+            //should be in the controller, I guess?
+            elem.onclick = () => {
+                if (model.validateSubmission()) {
+                    visualiser.render(model.getModel())
+                }
+            } 
         },
         "participants": (elem) => {
             view.bindParticipants(elem)
@@ -438,6 +499,9 @@ var applySSBindings = (model, view, controller, dom, visualiser) => {
         },
         "emails-validate-warning": (elem) => {
             view.bindValidateEmails(elem)
+        },
+        "submission-validate-warning": (elem) => {
+            view.bindValidateEmpties(elem)
         },
         "submit": (elem) => {
             view.bindSubmitBtn(elem)
@@ -455,8 +519,8 @@ var applySSBindings = (model, view, controller, dom, visualiser) => {
         }
     }
     controller.initialiseApp()
-    controller.sampleBtnClicked()
-    visualiser.render(model.participants, model.forbidden_pairs)
+    //controller.sampleBtnClicked()
+    //visualiser.render(model.participants, model.forbidden_pairs)
 }
 
 var SecretSantaApp = (dom, visualiser) => {

@@ -5,5 +5,5 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 pushd $DIR && browserify src/app.js -o dst/bundle.js -t [ babelify --presets [ es2015 ] ] && popd;
 
 # Run this in another process:
-#pushd ~/dev/SecretSanta/server/client
+#pushd $DIR/server/client
 #watchify src/app.js -o dst/bundle.js -t [ babelify --presets [ es2015 ] ] -v

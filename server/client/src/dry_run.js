@@ -20,12 +20,26 @@ function get(url) {
         req.send();
     });
 }
-exports.get = get
+
+function post(url, data) {
+    return new Promise((resolve, reject) => {
+        const req = new XMLHttpRequest()
+        req.open('POST', url, true)
+        req.setRequestHeader("Content-type", "application/json")
+        req.onload = () => req.status === 200 ? resolve(req.response) : reject(Error(req.statusText))
+        req.onerror = (e) => reject(Error(`Network Error: ${e}`))
+        req.send(JSON.stringify(data))
+    });
+}
+exports.post = post
 
 var Visualiser = (dom) => {
-    var getGraph = (settings) => {
-        var payload = sample_cycle
-        return processCyclePayload(payload)
+    var getGraph = (settings, callback) => {
+        get("http://localhost:5000").then((response) => {
+            callback(response)
+        }).catch((error) => {
+            console.log("error: ", error);
+        })
     }
     var processCyclePayload = (cycle) => {
         var id = 0
@@ -57,8 +71,7 @@ var Visualiser = (dom) => {
             links
         }
     }
-    var render = (settings) => {
-        var graph = getGraph(settings)
+    var renderGraph = (graph) => {
         var svg = d3.select(dom)
         var width = svg.style("width").replace("px", "")
         var height = svg.style("height").replace("px", "")
@@ -150,6 +163,12 @@ var Visualiser = (dom) => {
             d.fy = null;
         }
 
+    }
+    var render = (settings) => {
+        //getGraph(settings, (cycle) => {
+            var graph = processCyclePayload(sample_cycle)
+            renderGraph(graph)
+        //})
     }
     return {
         render
