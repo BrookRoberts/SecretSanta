@@ -1,3 +1,11 @@
+*.pyc
+/server/client/css/
+/server/client/dst
+/server/client/.sass-cache
+
+/server/venv
+/server/client/node_modules
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

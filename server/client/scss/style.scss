@@ -1,0 +1,23 @@
+#dry-run {
+    width: 400px;
+    height: 400px;
+    border: 1px solid black;
+    path.link {
+        stroke: #999;
+        stroke-opacity: 0.6;
+        stroke-width: 1px;
+        // need this to stop the fill coming up
+        fill: none;
+    }
+
+    .node circle {
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
+    .node text {
+        font-size: 13px;
+        fill: #000;
+        color: #000;
+        font: 10px sans-serif;
+    }
+}
